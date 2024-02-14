@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Omar Adrian",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "docxtemplater": "^3.45.0",
+    "dotenv": "^16.4.3",
+    "express": "^4.18.2",
+    "pizzip": "^3.1.6"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "nodemon": "^3.0.3",
+    "ts-node": "^10.9.2"
+  }
+}
