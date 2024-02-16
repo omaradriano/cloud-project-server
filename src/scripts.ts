@@ -1,18 +1,18 @@
 // PizZip is required because docx/pptx/xlsx files are all zipped files, and
 // the PizZip library allows us to load the file in memory
-const PizZip = require("pizzip");
-const Docxtemplater = require("docxtemplater");
+import PizZip from 'pizzip'
+import Docxtemplater from 'docxtemplater';
 
 import { Carta_Compromiso } from '../src/docTypes'
 
-const fs = require("fs");
-const path = require("path");
 
+import path from 'path'
+import fs from 'fs'
 
-export default function createDocx(template: string, info: Carta_Compromiso) {
+export default async function createDocx(template: string, info: Carta_Compromiso) {
     //Leer y cargar el contenido como binario
     const content = fs.readFileSync(
-        path.resolve(`${__dirname}/templates`, `${template}.docx`),
+        path.resolve(`${__dirname}/templates/pre-builded`, `${template}.docx`),
         "binary"
         );
 
@@ -30,12 +30,12 @@ export default function createDocx(template: string, info: Carta_Compromiso) {
     doc.render(info);
     
     //Construir el documento y generar un buffer
-    return doc.getZip().generate({
+    const buff =  doc.getZip().generate({
         type: "nodebuffer",
         // compression: DEFLATE adds a compression step.
         // For a 50MB output document, expect 500ms additional CPU time
         compression: "DEFLATE",
     });
-    // fs.writeFileSync(path.resolve(`${__dirname}/templates`, "template_final.docx"), buf);
+    fs.writeFileSync(path.resolve(`${__dirname}/templates/auto_generated_files`, "auto_generated.docx"), buff);
 }
 

@@ -6,6 +6,11 @@ import bodyParser from 'body-parser'
 import createDocx from './scripts'
 import { Carta_Compromiso } from './docTypes'
 
+import path from 'path'
+import fs from 'fs'
+
+import { convertWordFiles } from 'convert-multiple-files'
+
 type WhiteList = Array<string>
 const whiteList: WhiteList = ["http://127.0.0.1:3000", "http://localhost:3000"]
 
@@ -55,14 +60,28 @@ try {
 
         try {
             // Llama a tu función createDocx con la plantilla y los datos apropiados
-            const docxBuffer = await createDocx("template_carta_compromiso", info);
+            await createDocx("template_carta_compromiso", info);
 
             // Establece los encabezados para la descarga del archivo
-            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-            res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.docx`);
+            // res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            // res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.docx`);
 
-            // Envía el archivo como respuesta
-            res.status(200).send(docxBuffer); //Se descarga al hacer la peticion
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.pdf`);
+
+            const entryFilePath = path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.docx');
+            const outputDirPath = path.resolve(__dirname, 'templates', 'auto_generated_files');
+
+            if (fs.existsSync(entryFilePath)) {
+                // El archivo existe, procede con la conversión a PDF
+                await convertWordFiles(entryFilePath, 'pdf', outputDirPath)
+                const pdfBuffer = fs.readFileSync(path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.pdf'))
+                res.status(200).send(pdfBuffer)
+            } else {
+                // El archivo no existe, envía un error al cliente o maneja la situación de otra manera
+                console.error('El archivo fuente no existe:', entryFilePath);
+                res.status(404).send('Archivo fuente no encontrado');
+            }
         } catch (error) {
             console.error("Error al generar el archivo .docx:", error);
             res.status(500).send("Error al generar el archivo .docx");
