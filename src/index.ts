@@ -4,7 +4,11 @@ dot.config()
 const port = process.env.PORT || 3005
 import bodyParser from 'body-parser'
 import createDocx from './scripts'
-import { Carta_Compromiso } from './docTypes'
+
+import path from 'path'
+import fs from 'fs'
+
+import { convertWordFiles } from 'convert-multiple-files'
 
 type WhiteList = Array<string>
 const whiteList: WhiteList = ["http://127.0.0.1:3000", "http://localhost:3000"]
@@ -28,46 +32,62 @@ try {
         next();
     });
 
-    server.get('/download/carta_compromiso', async (req: Request, res: Response) => {
-
-        // const info = req.body
-
-        const info: Carta_Compromiso = { //Esta informacion debe de ser remplazada por un req.body el cual debe de contener toda la informacion
-            name: 'Omar Adrian Acosta Santiago',
-            n_control: '18550685',
-            address: 'Parque el retiro #10043 Jardines de Oriente',
-            tel: '6145163473',
-            career: 'Ingenieria en Sistemas computacionales',
-            sem: '12',
-            dependency_name: 'Tec 2',
-            dependency_address: 'Direccion del lugar',
-            responsable: 'Responsable del programa',
-            start_day: '5',
-            start_month: '6',
-            start_year: '2022',
-            end_day: '8',
-            end_month: '12',
-            end_year: '2023',
-            actual_day: '12',
-            actual_month: '2',
-            actual_year: '2024'
-        }
+    server.get('/download/:file/:type', async (req: Request, res: Response) => {
+        const info = req.body
+        let { file, type } = req.params
 
         try {
-            // Llama a tu función createDocx con la plantilla y los datos apropiados
-            const docxBuffer = await createDocx("template_carta_compromiso", info);
+            await createDocx(`template_${file}`, info);
 
-            // Establece los encabezados para la descarga del archivo
-            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-            res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.docx`);
+            if (type === 'docx') {
+                res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+                res.setHeader("Content-Disposition", `attachment; filename=${file}.docx`);
+                const filePath = path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.docx')
+                if (fs.existsSync(filePath)) {
+                    const docxBuffer = fs.readFileSync(filePath)
+                    res.status(200).send(docxBuffer)
+                }
+            } else if (type === 'pdf') {
+                res.setHeader("Content-Type", "application/pdf");
+                res.setHeader("Content-Disposition", `attachment; filename=${file}.pdf`);
+                const entryFilePath = path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.docx');
+                const outputDirPath = path.resolve(__dirname, 'templates', 'auto_generated_files');
 
-            // Envía el archivo como respuesta
-            res.status(200).send(docxBuffer); //Se descarga al hacer la peticion
+                if (fs.existsSync(entryFilePath)) {
+                    await convertWordFiles(entryFilePath, 'pdf', outputDirPath)
+                    const pdfBuffer = fs.readFileSync(path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.pdf'))
+                    res.status(200).send(pdfBuffer)
+                } else {
+                    console.error('El archivo fuente no existe:', entryFilePath);
+                    res.status(404).send('Archivo fuente no encontrado');
+                }
+            }
+            fs.readdir(path.resolve(__dirname,'templates','auto_generated_files'), (err, archivos) => {
+                if (err) {
+                    console.error('Error al leer el directorio:', err);
+                    return;
+                }
+                // Itera sobre cada archivo en el directorio
+                archivos.forEach(nombreArchivo => {
+                    // Obtiene la ruta completa del archivo
+                    const rutaArchivo = path.join(path.resolve(__dirname,'templates','auto_generated_files'), nombreArchivo);
+
+                    // Borra el archivo
+                    fs.unlink(rutaArchivo, err => {
+                        if (err) {
+                            console.error('Error al borrar el archivo:', err);
+                            return;
+                        }
+                        console.log(`Archivo ${nombreArchivo} eliminado`);
+                    });
+                });
+            });
         } catch (error) {
-            console.error("Error al generar el archivo .docx:", error);
-            res.status(500).send("Error al generar el archivo .docx");
-        }
+            console.error((error as Error).message);
+            res.status(500).send("Error al generar el documento");
+        } finally {
 
+        }
     })
 
     server.listen(port, () => {

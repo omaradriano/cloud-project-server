@@ -8,7 +8,7 @@ export interface Carta_Compromiso {
     dependency_name: string,
     dependency_address: string,
     responsable: string,
-    start_day: string, start_month: string, start_year: string,
-    end_day: string, end_month: string, end_year: string,
-    actual_day: string, actual_month: string, actual_year: string
+    s_d: string, s_m: string, s_y: string,
+    e_d: string, e_m: string, e_y: string,
+    a_d: string, a_m: string, a_y: string
 }
