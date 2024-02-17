@@ -62,11 +62,31 @@ try {
                     res.status(404).send('Archivo fuente no encontrado');
                 }
             }
+            fs.readdir(path.resolve(__dirname,'templates','auto_generated_files'), (err, archivos) => {
+                if (err) {
+                    console.error('Error al leer el directorio:', err);
+                    return;
+                }
+                // Itera sobre cada archivo en el directorio
+                archivos.forEach(nombreArchivo => {
+                    // Obtiene la ruta completa del archivo
+                    const rutaArchivo = path.join(path.resolve(__dirname,'templates','auto_generated_files'), nombreArchivo);
+
+                    // Borra el archivo
+                    fs.unlink(rutaArchivo, err => {
+                        if (err) {
+                            console.error('Error al borrar el archivo:', err);
+                            return;
+                        }
+                        console.log(`Archivo ${nombreArchivo} eliminado`);
+                    });
+                });
+            });
         } catch (error) {
             console.error((error as Error).message);
             res.status(500).send("Error al generar el documento");
         } finally {
-            
+
         }
     })
 
