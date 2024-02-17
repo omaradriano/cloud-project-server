@@ -12,7 +12,7 @@ import fs from 'fs'
 export default async function createDocx(template: string, info: Carta_Compromiso) {
     //Leer y cargar el contenido como binario
     const content = fs.readFileSync(
-        path.resolve(`${__dirname}/templates/pre-builded`, `${template}.docx`),
+        path.resolve(__dirname,'templates','pre-builded', `${template}.docx`),
         "binary"
         );
 
@@ -36,6 +36,6 @@ export default async function createDocx(template: string, info: Carta_Compromis
         // For a 50MB output document, expect 500ms additional CPU time
         compression: "DEFLATE",
     });
-    fs.writeFileSync(path.resolve(`${__dirname}/templates/auto_generated_files`, "auto_generated.docx"), buff);
+    fs.writeFileSync(path.resolve(__dirname,'templates','auto_generated_files','auto_generated.docx'), buff);
 }
 
