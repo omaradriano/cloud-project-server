@@ -11,6 +11,8 @@ import fs from 'fs'
 
 import { convertWordFiles } from 'convert-multiple-files'
 
+type fileType = 'docx' | 'pdf'
+
 type WhiteList = Array<string>
 const whiteList: WhiteList = ["http://127.0.0.1:3000", "http://localhost:3000"]
 
@@ -33,9 +35,10 @@ try {
         next();
     });
 
-    server.get('/download/carta_compromiso', async (req: Request, res: Response) => {
-
+    server.get('/download/:file/:type', async (req: Request, res: Response) => {
         // const info = req.body
+        let { file, type } = req.params
+        console.log(file);
 
         const info: Carta_Compromiso = { //Esta informacion debe de ser remplazada por un req.body el cual debe de contener toda la informacion
             name: 'Omar Adrian Acosta Santiago',
@@ -58,33 +61,38 @@ try {
             actual_year: '2024'
         }
 
-        try {
-            // Llama a tu función createDocx con la plantilla y los datos apropiados
-            await createDocx("template_carta_compromiso", info);
-
-            // Establece los encabezados para la descarga del archivo
-            // res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-            // res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.docx`);
-
+        switch (file) {
+            case 'carta_compromiso':
+                try {
+                    await createDocx(`template_${file}`, info);
+                } catch (error) {
+                    console.error("Error al generar el archivo .docx:", error);
+                    res.status(500).send("Error al generar el documento");
+                }
+                break
+        }
+        if (type === 'docx') {
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            res.setHeader("Content-Disposition", `attachment; filename=${file}.docx`);
+            const filePath = path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.docx')
+            if (fs.existsSync(filePath)) {
+                const docxBuffer = fs.readFileSync(filePath)
+                res.status(200).send(docxBuffer)
+            }
+        } else if (type === 'pdf') {
             res.setHeader("Content-Type", "application/pdf");
-            res.setHeader("Content-Disposition", `attachment; filename=${'template-formato'}.pdf`);
-
+            res.setHeader("Content-Disposition", `attachment; filename=${file}.pdf`);
             const entryFilePath = path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.docx');
             const outputDirPath = path.resolve(__dirname, 'templates', 'auto_generated_files');
 
             if (fs.existsSync(entryFilePath)) {
-                // El archivo existe, procede con la conversión a PDF
                 await convertWordFiles(entryFilePath, 'pdf', outputDirPath)
                 const pdfBuffer = fs.readFileSync(path.resolve(__dirname, 'templates', 'auto_generated_files', 'auto_generated.pdf'))
                 res.status(200).send(pdfBuffer)
             } else {
-                // El archivo no existe, envía un error al cliente o maneja la situación de otra manera
                 console.error('El archivo fuente no existe:', entryFilePath);
                 res.status(404).send('Archivo fuente no encontrado');
             }
-        } catch (error) {
-            console.error("Error al generar el archivo .docx:", error);
-            res.status(500).send("Error al generar el archivo .docx");
         }
 
     })
