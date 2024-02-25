@@ -3,8 +3,7 @@
 import PizZip from 'pizzip'
 import Docxtemplater from 'docxtemplater';
 
-import { Carta_Compromiso } from '../src/docTypes'
-
+import { Carta_Compromiso } from './docTypes'
 
 import path from 'path'
 import fs from 'fs'
