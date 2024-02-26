@@ -5,6 +5,7 @@ import {port} from './config'
 import bodyParser from 'body-parser'
 
 import docs from '../src/routes/files.routes'
+import auth from './routes/jwt.routes'
 
 type WhiteList = Array<string>
 const whiteList: WhiteList = ["http://127.0.0.1:3000", "http://localhost:3000"]
@@ -28,7 +29,9 @@ try {
         next();
     });
 
-    server.use('/', docs)
+    server.use(docs)
+
+    server.use(auth)
 
     server.listen(port, () => {
         console.log(`Running server on port ${port}`);
