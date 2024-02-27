@@ -3,8 +3,9 @@ import { Router, Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 // Mongodb
 import { MongoClient } from 'mongodb'
-import { mongouri } from '../config'
-
+import { mongouri, token } from '../config'
+// Using bcrypt to hash
+import bcrypt from 'bcrypt'
 // Conexion mongodb
 const uri = mongouri;
 
@@ -17,7 +18,8 @@ const auth = Router()
 
 auth.post('/signup', async (req: Request<User>, res: Response) => {
     const client = new MongoClient(uri);
-    const { name, email } = req.body
+    const { name, email, password } = req.body
+    let saltRounds = 8
     try {
         const db = client.db('school');
         const collection = db.collection('users');
@@ -30,10 +32,11 @@ auth.post('/signup', async (req: Request<User>, res: Response) => {
             res.status(401).json({ message: 'El nombre de usuario ya existe', status: 401 })
         } else if (checkEmail) {
             res.status(401).json({ message: 'El correo ya se encuentra registrado', status: 401 })
-        }else{
-            let query = {"name": name, "email": email}
+        } else {
+            let hashedpass = await bcrypt.hash(password, saltRounds)
+            let query = { "name": name, "email": email, "password": hashedpass }
             await collection.insertOne(query)
-            res.status(200).json({message: "Registrado correctamente", status:200})
+            res.status(200).json({ message: "Registrado correctamente", status: 200 })
         }
     } catch (err) {
         let error = err as Error
@@ -41,6 +44,38 @@ auth.post('/signup', async (req: Request<User>, res: Response) => {
     } finally {
         // Ensures that the client will close when you finish/error
         await client.close();
+    }
+})
+
+auth.get('/login', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // PENDIENTE
+        const client = new MongoClient(uri);
+
+        const { email, password } = req.body;
+
+        const db = client.db('school');
+        const collection = db.collection('users');
+        // check if user exists
+        const userExists = await collection.findOne({ email: email }, { projection: { "_id": 0, "password": 1, "name":1 } });
+        if (!userExists) throw new Error('Error en autenticacion')
+
+        // Recuperar contrasena con el hash
+        let validpass = await bcrypt.compare(password, userExists.password).catch(err => {throw new Error(err)})
+
+        // validate the password
+        if (!validpass) throw new Error('Error en autenticacion')
+
+        // generate the token
+        const tokenjwt = jwt.sign({ name: userExists.name }, token, {
+            expiresIn: '2h',
+        });
+        res.status(200).json({message: "Loggeado correctamente", tokenjwt, status: 200})
+        console.log('Loggeado');
+    } catch (error) {
+        let err = error as Error
+        console.log(err.message);
+        res.status(401).json({message: 'No se ha podido iniciar sesion', status: 401})
     }
 })
 
