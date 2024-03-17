@@ -75,7 +75,7 @@ auth.get('/login', async (req: Request, res: Response, next: NextFunction) => {
     } catch (error) {
         let err = error as Error
         console.log(err.message);
-        res.status(401).json({message: 'No se ha podido iniciar sesion', status: 401})
+        res.status(401).json({message: 'No se ha podido iniciar sesion. Verifica tus datos', status: 401})
     }
 })
 

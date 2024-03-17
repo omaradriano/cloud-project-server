@@ -2,11 +2,12 @@ import createDocx from '../generatedoc'
 import path from 'path'
 import fs from 'fs'
 import { convertWordFiles } from 'convert-multiple-files'
-import { Router, Request, Response } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
+import {auth} from '../middlewares/auth_credentials'
 
 const docs = Router()
 
-docs.get('/download/:file/:type', async (req: Request, res: Response) => {
+docs.get('/download/:file/:type', auth, async (req: Request, res: Response, next: NextFunction) => {
     const info = req.body
     let { file, type } = req.params
 
